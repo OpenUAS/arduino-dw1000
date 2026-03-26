@@ -43,7 +43,7 @@
 // reply time in us
 #define DEFAULT_REPLY_DELAY_TIME 5000
 
-#define STATE_SIZE 12
+#define STATE_SIZE 24
 
 #define FLOAT_SIZE 4
 
@@ -58,72 +58,77 @@
 #define R 3
 
 
-class ConnectedRangingClass {
+class ConnectedRangingClass
+{
 
 public:
-	// data buffer
-	static byte _data[MAX_LEN_DATA];
+    // data buffer
+    static byte _data[MAX_LEN_DATA];
 
-	// initialisation
-	static void init(char longAddress[], uint8_t numNodes);
-	static void init(uint8_t veryShortAddress, uint8_t numNodes);
-	static void initDecawave(byte longAddress[], uint8_t numNodes, const byte mode[] = DW1000.MODE_LONGDATA_RANGE_ACCURACY, uint16_t networkID=0xDECA,uint8_t myRST=9, uint8_t mySS=SS, uint8_t myIRQ=2);
+    // initialisation
+    static void init(char longAddress[], uint8_t numNodes);
+    static void init(uint8_t veryShortAddress, uint8_t numNodes);
+    static void initDecawave(byte longAddress[], uint8_t numNodes, const byte mode[] = DW1000.MODE_LONGDATA_RANGE_ACCURACY, uint16_t networkID = 0xDECA, uint8_t myRST = 9, uint8_t mySS = SS, uint8_t myIRQ = 2);
 
-	// set DW1000 in permanent receiving mode
-	static void receiver();
+    // set DW1000 in permanent receiving mode
+    static void receiver();
 
-	// transmit functions
-	static void transmitInit();
-	static void transmitData(byte datas[]);
-	static void transmitData(char datas[]);
-	static void transmitData(char datas[],uint16_t n);
-	static void transmitData(byte datas[], DW1000Time timeDelay);
+    // transmit functions
+    static void transmitInit();
+    static void transmitData(byte datas[]);
+    static void transmitData(char datas[]);
+    static void transmitData(char datas[], uint16_t n);
+    static void transmitData(byte datas[], DW1000Time timeDelay);
 
-	// main loop
-	static void loop();
+    // main loop
+    static void loop();
 
-	// reset functions
-	static void checkForReset();
-	static void resetInactive();
-	static void noteActivity();
+    // reset functions
+    static void checkForReset();
+    static void resetInactive();
+    static void noteActivity();
 
-	// handlers
-	static void handleSent();
-	static void handleReceived();
-	static void handleRanges();
-	static void attachNewRange(void (* handleNewRange)(void)) { _handleNewRange = handleNewRange; };
+    // handlers
+    static void handleSent();
+    static void handleReceived();
+    static void handleRanges();
+    static void attachNewRange(void (* handleNewRange)(void))
+    {
+        _handleNewRange = handleNewRange;
+    };
 
-	// received message parsing and handling
-	static void handleReceivedData();
-	static void incrementDataPointer(uint16_t *ptr);
-	static void processMessage(uint8_t msgfrom,uint16_t *ptr);
-	static void computeRangeAsymmetric(DW1000Device* myDistantDevice, DW1000Time* myTOF);
-	static void retrieveState(uint16_t *ptr);
+    // received message parsing and handling
+    static void handleReceivedData();
+    static void incrementDataPointer(uint16_t *ptr);
+    static void processMessage(uint8_t msgfrom, uint16_t *ptr);
+    static void computeRangeAsymmetric(DW1000Device* myDistantDevice, DW1000Time* myTOF);
+    static void retrieveState(uint16_t *ptr);
 
-	// sent message handling
-	static void updateSentTimes();
+    // sent message handling
+    static void updateSentTimes();
 
 
-	// producing the transmit message
-	static void produceMessage();
-	static void addMessageToData(uint16_t *ptr,DW1000Node *distantNode);
-	static void addPollMessage(uint16_t *ptr, DW1000Node *distantNode);
-	static void addPollAckMessage(uint16_t *ptr, DW1000Node *distantNode);
-	static void addRangeMessage(uint16_t *ptr, DW1000Node *distantNode);
-	static void addRangeReportMessage(uint16_t *ptr, DW1000Node *distantNode);
-	static void addReceiveFailedMessage(uint16_t *ptr, DW1000Node *distantNode);
-	static void addStateToData(uint16_t *ptr);
+    // producing the transmit message
+    static void produceMessage();
+    static void addMessageToData(uint16_t *ptr, DW1000Node *distantNode);
+    static void addPollMessage(uint16_t *ptr, DW1000Node *distantNode);
+    static void addPollAckMessage(uint16_t *ptr, DW1000Node *distantNode);
+    static void addRangeMessage(uint16_t *ptr, DW1000Node *distantNode);
+    static void addRangeReportMessage(uint16_t *ptr, DW1000Node *distantNode);
+    static void addReceiveFailedMessage(uint16_t *ptr, DW1000Node *distantNode);
+    static void addStateToData(uint16_t *ptr);
 
-	// Setting state variables when they come in via serial
-	static void setSelfState(float vx, float vy, float z);
+    // Setting state variables when they come in via serial
+    static void setSelfState(float vx, float vy, float z, float ax, float ay, float yawr);
 
-	// Getters
-	static DW1000Node* getDistantNode();
+    // Getters
+    static DW1000Node* getDistantNode();
 
-	static void printDataBytes();
+    static void printDataBytes();
 
-	// Handling new state receive over serial
-	static void handleNewSelfStateValue(float value, uint8_t type);
+    // Handling new state receive over serial
+    static void handleNewSelfStateValue(float value, uint8_t type);
+    static void handleNewSelfPackedState(float* states, uint8_t type);
 
 
 
@@ -134,53 +139,53 @@ public:
 protected:
 
 
-	// pins on the arduino used to communicate with DW1000
-	static uint8_t _RST;
-	static uint8_t _SS;
-	static uint8_t _IRQ;
+    // pins on the arduino used to communicate with DW1000
+    static uint8_t _RST;
+    static uint8_t _SS;
+    static uint8_t _IRQ;
 
-	// addresses of current DW1000
-	static byte _longAddress[LEN_EUI];
-	static byte _veryShortAddress;
+    // addresses of current DW1000
+    static byte _longAddress[LEN_EUI];
+    static byte _veryShortAddress;
 
-	// message sent/received state
-	static volatile boolean _sentAck;
-	static volatile boolean _receivedAck;
+    // message sent/received state
+    static volatile boolean _sentAck;
+    static volatile boolean _receivedAck;
 
-	// keeping track of send times
-	static uint32_t _lastSent;
+    // keeping track of send times
+    static uint32_t _lastSent;
 
-	// nodes to range with
-	static DW1000Node _networkNodes[MAX_NODES];
-	static DW1000Node* _lastNode;
-	static uint8_t _numNodes;
+    // nodes to range with
+    static DW1000Node _networkNodes[MAX_NODES];
+    static DW1000Node* _lastNode;
+    static uint8_t _numNodes;
 
-	// self node
-	static DW1000Node _selfNode;
+    // self node
+    static DW1000Node _selfNode;
 
-	// initializing those nodes
-	static void initNodes();
+    // initializing those nodes
+    static void initNodes();
 
-	// when it is time to send
-	static boolean _timeToSend;
+    // when it is time to send
+    static boolean _timeToSend;
 
-	// remembering future time in case a RANGE message is sent
-	static boolean _rangeSent;
-	static DW1000Time _rangeTime;
+    // remembering future time in case a RANGE message is sent
+    static boolean _rangeSent;
+    static DW1000Time _rangeTime;
 
-	// extended frame;
-	static boolean _extendedFrame;
+    // extended frame;
+    static boolean _extendedFrame;
 
-	static uint16_t protTimes;
+    static uint16_t protTimes;
 
-	// reset variable
-	static uint32_t _lastActivity;
+    // reset variable
+    static uint32_t _lastActivity;
 
-	static uint16_t _maxLenData;
+    static uint16_t _maxLenData;
 
 
-	// Handlers
-	static void (* _handleNewRange)(void);
+    // Handlers
+    static void (* _handleNewRange)(void);
 
 
 

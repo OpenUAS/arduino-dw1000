@@ -12,7 +12,7 @@ uint8_t veryShortAddress = 2;
 void setup() {
   Serial.begin(57600);
   ConnectedRanging.init(veryShortAddress,numNodes);
-  ConnectedRanging.setSelfState(0.0,0.0,0.0);
+  ConnectedRanging.setSelfState(0.0,0.0,0.0,0.0,0.0,0.0);
   ConnectedRanging.attachNewRange(newRange);
 
 }

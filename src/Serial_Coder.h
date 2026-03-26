@@ -12,7 +12,7 @@
 #include "DW1000Node.h"
 
 
-#define MAX_MESSAGE 10
+#define MAX_MESSAGE 64
 #define IN_MESSAGE_SIZE 4
 #define OUT_MESSAGE_SIZE 8
 #define END_MARKER 255
@@ -29,54 +29,64 @@
  * Furthermore it will dedicate a byte to indicate the type of message, such that multiple different messages can be sent depending on the indicator byte.
  * A message will therefore look like {<start character> <message type> <message payload> <end character>}
  */
-class SerialCoderClass{
+class SerialCoderClass
+{
 
 public:
-	SerialCoderClass();
-	static void getSerialData();
-	static void processData();
-	static void decodeHighBytes();
+    SerialCoderClass();
+    static void getSerialData();
+    static void processData();
+    static void decodeHighBytes();
 
-	//static float receiveFloat(byte msgtype);
+    //static float receiveFloat(byte msgtype);
 
 
-	static void sendFloat(byte thisAddress,byte remoteAddress,byte msgtype, float outfloat);
-	static void encodeHighBytes(byte* sendData, uint8_t msgSize);
+    static void sendFloat(byte thisAddress, byte remoteAddress, byte msgtype, float outfloat);
+    static void sendPackedState(byte thisAddress, byte remoteAddress, float* states);
+    static void encodeHighBytes(byte* sendData, uint8_t msgSize);
 
-	static void checkBigEndian();
+    static void checkBigEndian();
 
-	static void attachStateHandle(void (* handleNewSelfStateValue)(float,uint8_t)) { _handleNewSelfStateValue = handleNewSelfStateValue; };
-	//static void updateStateVar(byte msgFrom,byte msgType);
-	//static boolean stateUpdated();
+    static void attachStateHandle(void (* handleNewSelfStateValue)(float, uint8_t))
+    {
+        _handleNewSelfStateValue = handleNewSelfStateValue;
+    };
+    static void attachPackedStateHandle(void (* handleNewSelfPackedState)(float*, uint8_t))
+    {
+        _handleNewSelfPackedState = handleNewSelfPackedState;
+    };
+    //static void updateStateVar(byte msgFrom,byte msgType);
+    //static boolean stateUpdated();
 
 
 
 protected:
-	static byte _bytesRecvd;
-	static byte _dataSentNum;
-	static byte _dataRecvCount;
+    static byte _bytesRecvd;
+    static byte _dataSentNum;
+    static byte _dataRecvCount;
 
 
-	static byte _tempBuffer[MAX_MESSAGE];
-	static byte _tempBuffer2[MAX_MESSAGE];
-	static byte _recvBuffer[FLOAT_SIZE];
+    static byte _tempBuffer[MAX_MESSAGE];
+    static byte _tempBuffer2[MAX_MESSAGE];
+    static byte _recvBuffer[64];
 
-	static byte _dataSendCount;
-	static byte _dataTotalSend;
+    static byte _dataSendCount;
+    static byte _dataTotalSend;
 
-	static boolean _inProgress;
-	static boolean _startFound;
-	static boolean _allReceived;
+    static boolean _inProgress;
+    static boolean _startFound;
+    static boolean _allReceived;
 
-	//static MessageIn _receiveMessages[IN_MESSAGES];
-	//static selfState _selfState;
+    //static MessageIn _receiveMessages[IN_MESSAGES];
+    //static selfState _selfState;
 
-	static byte _varByte;
+    static byte _varByte;
 
-	static boolean _bigEndian;
+    static boolean _bigEndian;
 
-	// Handlers
-	static void (* _handleNewSelfStateValue)(float,uint8_t);
+    // Handlers
+    static void (* _handleNewSelfStateValue)(float, uint8_t);
+    static void (* _handleNewSelfPackedState)(float*, uint8_t);
 
 };
 
