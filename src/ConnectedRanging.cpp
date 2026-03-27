@@ -55,6 +55,7 @@ uint16_t ConnectedRangingClass::protTimes = 0;
 uint32_t ConnectedRangingClass::_lastActivity;
 
 uint16_t ConnectedRangingClass::_maxLenData;
+uint16_t ConnectedRangingClass::_receivedLen = 0;
 
 
 
@@ -198,13 +199,20 @@ void ConnectedRangingClass::loop()
         noteActivity();
         _receivedAck = false;
         //we read the datas from the modules:
-        // get message and parse
-        DW1000.getData(_data, _maxLenData);
+        // get message and parse with explicitly calculated length bounds 
+        int recvLen = DW1000.getDataLength();
+        _receivedLen = (recvLen <= _maxLenData) ? recvLen : _maxLenData;
+        DW1000.getData(_data, _receivedLen);
         handleReceivedData();
     }
-    if (_veryShortAddress == 1 && millis() - _lastSent > DEFAULT_RESET_TIME) {
+    
+    // Failsafe: Prevent entire swarm token ring from collapsing if Node 1 goes offline!
+    // Offset the timeout cascade so nodes recover tracking sequentially 
+    uint32_t failSafeTimeout = DEFAULT_RESET_TIME + (_veryShortAddress * 20);
+    if (millis() - _lastSent > failSafeTimeout) {                                                                        
         _timeToSend = true;
     }
+    
     if (_timeToSend) {
         _timeToSend = false;
         _lastSent = millis();
@@ -285,11 +293,17 @@ void ConnectedRangingClass::handleReceived()
 // Handle the received data
 void ConnectedRangingClass::handleReceivedData()
 {
+    if (_receivedLen < 1) return; // Prevent bounds crashing immediately
+
     uint8_t messagefrom = _data[0];
+    
+    // Protect against spurious noise IDs completely outside of our swarm network
+    if (messagefrom == 0 || messagefrom > _numNodes) return;
+    
     uint8_t nodeIndex = messagefrom - 1 - (uint8_t)(_veryShortAddress < messagefrom);
     _lastNode = &_networkNodes[nodeIndex];
 
-    // Nodes transmit in ascending order, so this device will transmit if the previous device's address is one less than this device's address
+    // Nodes transmit in ascending order
     if (messagefrom == _veryShortAddress - 1) {
         _timeToSend = true;
     } else if (messagefrom == _numNodes && _veryShortAddress == 1) {
@@ -299,24 +313,26 @@ void ConnectedRangingClass::handleReceivedData()
     }
 
     uint16_t datapointer = 1;
-    //Serial.println(F("Got into handleReceivedData, timetosend is: "));Serial.println(_timeToSend);
 
+    // Retrieve state information, bound checked
+    if (datapointer + STATE_SIZE <= _receivedLen) {
+        retrieveState(&datapointer); 
+    } else {
+        return; // Broken packet 
+    }
 
-    retrieveState(&datapointer); // Get the state information from the sending node (stored at start of message)
-
-
-    // Decode the message to extract the part of _data meant for this device
     uint8_t toDevice;
     for (int i = 0; i < _numNodes - 1; i++) {
+        if (datapointer >= _receivedLen) break; // Memory bound intercept
+        
         toDevice = _data[datapointer];
         if (toDevice != _veryShortAddress) {
             incrementDataPointer(&datapointer);
         } else if (toDevice == _veryShortAddress) {
             processMessage(messagefrom, &datapointer);
         }
-
     }
-
+}
 }
 
 void ConnectedRangingClass::handleRanges()

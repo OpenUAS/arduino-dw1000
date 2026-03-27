@@ -47,8 +47,8 @@
 
 #define FLOAT_SIZE 4
 
-// maximum number of nodes that can be connected. Warning: Consumes a lot of SRAM. Need to optimize if going beyond 4 nodes.
-#define MAX_NODES 4
+// Scale up to 8 nodes specifically for Swarm Integration. Native memory handles up to ~16 easily.
+#define MAX_NODES 8
 #define MAX_LEN_DATA (MAX_NODES-1)*RANGE_SIZE+MAX_NODES+STATE_SIZE
 
 // Serial message types
@@ -182,6 +182,7 @@ protected:
     static uint32_t _lastActivity;
 
     static uint16_t _maxLenData;
+    static uint16_t _receivedLen;
 
 
     // Handlers
